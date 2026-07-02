@@ -6,11 +6,11 @@ import urllib.parse
 import io
 import shutil
 
-DATA_DIR = Path("data")
-DATA_FILE = DATA_DIR / "alllinks.xlsx"
-TRACKER_FILE = DATA_DIR / "daily_tracker.xlsx"
-SHEET_NAME = "Links"
-TRACKER_SHEET = "Tracker"
+DATA_DIR = Path('data')
+DATA_FILE = DATA_DIR / 'alllinks.xlsx'
+TRACKER_FILE = DATA_DIR / 'daily_tracker.xlsx'
+SHEET_NAME = 'Links'
+TRACKER_SHEET = 'Tracker'
 COLUMNS = ["Category","Application Name","Description","Link Type","URL","Owner","Uploaded By","Uploaded Date","Last Modified By","Last Modified Date","Status","Update Available","Version","Department","Priority","Remarks"]
 TRACKER_COLUMNS = ["Task Name","Owner","Start Date","Expected End Date","ETA","Progress","Status","Priority","Remarks","Created By","Created Date","Last Modified By","Last Modified Date"]
 STATUS_COLORS = {"Active":"🟢","In Progress":"🔵","Pending":"🟠","Retired":"⚪","Issue":"🔴"}
@@ -21,69 +21,67 @@ ADMIN_PASSWORD = "admin@hub2026"
 
 st.set_page_config(page_title="Centralized Application Access Hub", page_icon="📊", layout="wide")
 
-CSS = """
-<style>
-#MainMenu, footer, header {visibility: hidden;}
-.block-container {padding-top: 1rem; padding-bottom: 1rem;}
-.top-header {background: linear-gradient(135deg, #1E3A5F, #2563EB, #3B82F6); padding: 16px 28px; border-radius: 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(37,99,235,0.2);}
-.top-header .title-area {text-align: center; flex: 1;}
-.top-header h1 {font-size: 22px; font-weight: 800; color: #fff; margin: 0;}
-.top-header .subtitle {color: #BFDBFE; font-size: 12px; margin: 2px 0 0;}
-.top-header .user-info {text-align: right; color: #BFDBFE; font-size: 11px; min-width: 180px;}
-.top-header .user-info b {color: #fff; font-size: 13px;}
-.top-header .logo {width: 42px; height: 42px; border-radius: 10px; min-width: 42px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px;}
-.stat-row {display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;}
-.stat-card {flex: 1; min-width: 130px; padding: 14px 16px; border-radius: 12px; text-align: center; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 2px 8px rgba(0,0,0,0.04);}
-.stat-card .num {font-size: 28px; font-weight: 800; line-height: 1.1;}
-.stat-card .lbl {font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;}
-.sc-blue {background: #EFF6FF;} .sc-blue .num {color: #2563EB;}
-.sc-green {background: #ECFDF5;} .sc-green .num {color: #059669;}
-.sc-red {background: #FEF2F2;} .sc-red .num {color: #DC2626;}
-.sc-purple {background: #F5F3FF;} .sc-purple .num {color: #7C3AED;}
-.sc-yellow {background: #FEFCE8;} .sc-yellow .num {color: #CA8A04;}
-.sc-cyan {background: #ECFEFF;} .sc-cyan .num {color: #0891B2;}
-.badge {display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;}
-.badge-active {background: #D1FAE5; color: #059669;}
-.badge-inprogress {background: #DBEAFE; color: #3B82F6;}
-.badge-pending {background: #FEF3C7; color: #D97706;}
-.badge-retired {background: #F1F5F9; color: #64748B;}
-.badge-issue {background: #FEE2E2; color: #DC2626;}
-.badge-yes {background: #FEE2E2; color: #DC2626;}
-.badge-no {background: #D1FAE5; color: #059669;}
-.badge-done {background: #D1FAE5; color: #059669;}
-.badge-todo {background: #DBEAFE; color: #3B82F6;}
-.badge-blocked {background: #FEE2E2; color: #DC2626;}
-.cat-tag {display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;}
-.cat-dashboard {background: #DBEAFE; color: #1E40AF;}
-.cat-application {background: #FEF3C7; color: #92400E;}
-.cat-document {background: #FCE7F3; color: #9D174D;}
-.cat-report {background: #E0E7FF; color: #3730A3;}
-.cat-webpage {background: #CCFBF1; color: #065F46;}
-.cat-other {background: #F1F5F9; color: #64748B;}
-.htable {width: 100%; border-collapse: collapse; font-size: 12.5px;}
-.htable th {background: linear-gradient(135deg, #1E3A5F, #2563EB); color: white; padding: 10px; text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;}
-.htable td {padding: 8px 10px; border-bottom: 1px solid #E2E8F0; vertical-align: middle;}
-.htable tr:nth-child(even) {background: #F8FAFC;}
-.htable tr:hover {background: #EFF6FF;}
-.htable .nm {font-weight: 600; color: #0F172A;}
-.htable .ds {color: #64748B; font-size: 11.5px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
-.htable .mt {font-size: 11px; color: #64748B;}
-.htable .sr {text-align: center; color: #94A3B8; font-weight: 600; font-size: 11px;}
-.abtn {display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; border: 1px solid #E2E8F0; background: white; font-size: 12px; text-decoration: none; transition: all 0.12s;}
-.abtn:hover {background: #DBEAFE; border-color: #3B82F6; transform: translateY(-1px);}
-.pbar {width: 100%; height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden;}
-.pbar-fill {height: 100%; border-radius: 4px;}
-.stTabs [data-baseweb="tab-list"] {gap: 8px;}
-.stTabs [data-baseweb="tab"] {border-radius: 8px 8px 0 0; padding: 8px 20px; font-weight: 600; font-size: 13px;}
-.stButton > button {border-radius: 8px; font-weight: 600;}
-.stDownloadButton > button {border-radius: 8px; background: #059669; color: white; border: none;}
-.main .block-container {background: #FAFBFE;}
-div[data-testid="stSidebar"] {display: none;}
-.sec-title {font-size: 13px; font-weight: 700; color: #1E3A5F; margin: 12px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #3B82F6;}
-</style>
-"""
+CSS_LINES = [
+    "#MainMenu, footer, header {visibility: hidden;}",
+    ".block-container {padding-top: 1rem; padding-bottom: 1rem;}",
+    ".top-header {background: linear-gradient(135deg, #1E3A5F, #2563EB, #3B82F6); padding: 16px 28px; border-radius: 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(37,99,235,0.2);}",
+    ".top-header .title-area {text-align: center; flex: 1;}",
+    ".top-header h1 {font-size: 22px; font-weight: 800; color: #fff; margin: 0;}",
+    ".top-header .subtitle {color: #BFDBFE; font-size: 12px; margin: 2px 0 0;}",
+    ".top-header .user-info {text-align: right; color: #BFDBFE; font-size: 11px; min-width: 180px;}",
+    ".top-header .user-info b {color: #fff; font-size: 13px;}",
+    ".top-header .logo {width: 42px; height: 42px; border-radius: 10px; min-width: 42px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px;}",
+    ".stat-row {display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;}",
+    ".stat-card {flex: 1; min-width: 130px; padding: 14px 16px; border-radius: 12px; text-align: center; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 2px 8px rgba(0,0,0,0.04);}",
+    ".stat-card .num {font-size: 28px; font-weight: 800; line-height: 1.1;}",
+    ".stat-card .lbl {font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;}",
+    ".sc-blue {background: #EFF6FF;} .sc-blue .num {color: #2563EB;}",
+    ".sc-green {background: #ECFDF5;} .sc-green .num {color: #059669;}",
+    ".sc-red {background: #FEF2F2;} .sc-red .num {color: #DC2626;}",
+    ".sc-purple {background: #F5F3FF;} .sc-purple .num {color: #7C3AED;}",
+    ".sc-yellow {background: #FEFCE8;} .sc-yellow .num {color: #CA8A04;}",
+    ".sc-cyan {background: #ECFEFF;} .sc-cyan .num {color: #0891B2;}",
+    ".badge {display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;}",
+    ".badge-active {background: #D1FAE5; color: #059669;}",
+    ".badge-inprogress {background: #DBEAFE; color: #3B82F6;}",
+    ".badge-pending {background: #FEF3C7; color: #D97706;}",
+    ".badge-retired {background: #F1F5F9; color: #64748B;}",
+    ".badge-issue {background: #FEE2E2; color: #DC2626;}",
+    ".badge-yes {background: #FEE2E2; color: #DC2626;}",
+    ".badge-no {background: #D1FAE5; color: #059669;}",
+    ".badge-done {background: #D1FAE5; color: #059669;}",
+    ".badge-todo {background: #DBEAFE; color: #3B82F6;}",
+    ".badge-blocked {background: #FEE2E2; color: #DC2626;}",
+    ".cat-tag {display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;}",
+    ".cat-dashboard {background: #DBEAFE; color: #1E40AF;}",
+    ".cat-application {background: #FEF3C7; color: #92400E;}",
+    ".cat-document {background: #FCE7F3; color: #9D174D;}",
+    ".cat-report {background: #E0E7FF; color: #3730A3;}",
+    ".cat-webpage {background: #CCFBF1; color: #065F46;}",
+    ".cat-other {background: #F1F5F9; color: #64748B;}",
+    ".htable {width: 100%; border-collapse: collapse; font-size: 12.5px;}",
+    ".htable th {background: linear-gradient(135deg, #1E3A5F, #2563EB); color: white; padding: 10px; text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;}",
+    ".htable td {padding: 8px 10px; border-bottom: 1px solid #E2E8F0; vertical-align: middle;}",
+    ".htable tr:nth-child(even) {background: #F8FAFC;}",
+    ".htable tr:hover {background: #EFF6FF;}",
+    ".htable .nm {font-weight: 600; color: #0F172A;}",
+    ".htable .ds {color: #64748B; font-size: 11.5px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}",
+    ".htable .mt {font-size: 11px; color: #64748B;}",
+    ".htable .sr {text-align: center; color: #94A3B8; font-weight: 600; font-size: 11px;}",
+    ".abtn {display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; border: 1px solid #E2E8F0; background: white; font-size: 12px; text-decoration: none; transition: all 0.12s;}",
+    ".abtn:hover {background: #DBEAFE; border-color: #3B82F6; transform: translateY(-1px);}",
+    ".pbar {width: 100%; height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden;}",
+    ".pbar-fill {height: 100%; border-radius: 4px;}",
+    ".stTabs [data-baseweb='tab-list'] {gap: 8px;}",
+    ".stTabs [data-baseweb='tab'] {border-radius: 8px 8px 0 0; padding: 8px 20px; font-weight: 600; font-size: 13px;}",
+    ".stButton > button {border-radius: 8px; font-weight: 600;}",
+    ".stDownloadButton > button {border-radius: 8px; background: #059669; color: white; border: none;}",
+    ".main .block-container {background: #FAFBFE;}",
+    "div[data-testid='stSidebar'] {display: none;}",
+    ".sec-title {font-size: 13px; font-weight: 700; color: #1E3A5F; margin: 12px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #3B82F6;}",
+]
+CSS = "<style>" + " ".join(CSS_LINES) + "</style>"
 st.markdown(CSS, unsafe_allow_html=True)
-
 
 def ensure_files():
     DATA_DIR.mkdir(exist_ok=True)
@@ -159,7 +157,7 @@ def esc(t):
 
 def render_links_table(df):
     if df.empty:
-        st.info("No records. Go to **Data Management** tab to upload or add entries.")
+        st.info("No records. Go to Data Management tab to upload or add entries.")
         return
     html = '<div style="overflow-x:auto;max-height:550px;overflow-y:auto;border-radius:10px;border:1px solid #E2E8F0;"><table class="htable"><thead><tr>'
     for h in ["#","Category","Name","Type","Description","Owner","Status","Update","Ver.","Modified By","Modified Date","Actions"]:
@@ -182,26 +180,26 @@ def render_links_table(df):
         nm = esc(r.get("Application Name","-"))
         stv = str(r.get("Status","-"))
         sicon = STATUS_COLORS.get(stv,"")
-        html += '<tr>'
-        html += '<td class="sr">' + str(i+1) + '</td>'
-        html += '<td><span class="cat-tag ' + cc + '">' + pd2 + ' ' + str(r.get("Category","-")) + '</span></td>'
-        html += '<td class="nm">' + nm + '</td>'
-        html += '<td style="font-size:12px">' + ti + ' ' + str(r.get("Link Type","")) + '</td>'
-        html += '<td class="ds" title="' + desc + '">' + desc + '</td>'
-        html += '<td class="mt">' + str(r.get("Owner","-")) + '</td>'
-        html += '<td><span class="badge ' + sc + '">' + sicon + stv + '</span></td>'
-        html += '<td><span class="badge ' + uc + '">' + ut + '</span></td>'
-        html += '<td class="mt">' + str(r.get("Version","-")) + '</td>'
-        html += '<td class="mt">' + str(r.get("Last Modified By","-")) + '</td>'
-        html += '<td class="mt">' + md + '</td>'
-        html += '<td style="white-space:nowrap">' + ob + '</td>'
-        html += '</tr>'
+        html += "<tr>"
+        html += '<td class="sr">' + str(i+1) + "</td>"
+        html += '<td><span class="cat-tag ' + cc + '">' + pd2 + " " + str(r.get("Category","-")) + "</span></td>"
+        html += '<td class="nm">' + nm + "</td>"
+        html += '<td style="font-size:12px">' + ti + " " + str(r.get("Link Type","")) + "</td>"
+        html += '<td class="ds" title="' + desc + '">' + desc + "</td>"
+        html += '<td class="mt">' + str(r.get("Owner","-")) + "</td>"
+        html += '<td><span class="badge ' + sc + '">' + sicon + stv + "</span></td>"
+        html += '<td><span class="badge ' + uc + '">' + ut + "</span></td>"
+        html += '<td class="mt">' + str(r.get("Version","-")) + "</td>"
+        html += '<td class="mt">' + str(r.get("Last Modified By","-")) + "</td>"
+        html += '<td class="mt">' + md + "</td>"
+        html += '<td style="white-space:nowrap">' + ob + "</td>"
+        html += "</tr>"
     html += "</tbody></table></div>"
     st.markdown(html, unsafe_allow_html=True)
 
 def render_tracker_table(df):
     if df.empty:
-        st.info("No tasks yet. Click **Add Task** below to start tracking.")
+        st.info("No tasks yet. Click Add Task below to start tracking.")
         return
     html = '<div style="overflow-x:auto;max-height:500px;overflow-y:auto;border-radius:10px;border:1px solid #E2E8F0;"><table class="htable"><thead><tr>'
     for h in ["#","Task Name","Owner","Start","End","ETA","Progress","Status","Priority","Remarks","Modified By","Modified Date"]:
@@ -220,20 +218,20 @@ def render_tracker_table(df):
         ed = str(r.get("Expected End Date",""))[:10]
         if sd == "nan": sd = "-"
         if ed == "nan": ed = "-"
-        html += '<tr>'
-        html += '<td class="sr">' + str(i+1) + '</td>'
-        html += '<td class="nm">' + str(r.get("Task Name","-")) + '</td>'
-        html += '<td class="mt">' + str(r.get("Owner","-")) + '</td>'
-        html += '<td class="mt">' + sd + '</td>'
-        html += '<td class="mt">' + ed + '</td>'
-        html += '<td class="mt">' + str(r.get("ETA","-")) + '</td>'
+        html += "<tr>"
+        html += '<td class="sr">' + str(i+1) + "</td>"
+        html += '<td class="nm">' + str(r.get("Task Name","-")) + "</td>"
+        html += '<td class="mt">' + str(r.get("Owner","-")) + "</td>"
+        html += '<td class="mt">' + sd + "</td>"
+        html += '<td class="mt">' + ed + "</td>"
+        html += '<td class="mt">' + str(r.get("ETA","-")) + "</td>"
         html += '<td style="min-width:100px"><div class="pbar"><div class="pbar-fill" style="width:' + str(pv) + '%;background:' + pc + '"></div></div><span style="font-size:10px;color:' + pc + ';font-weight:700">' + str(pv) + '%</span></td>'
-        html += '<td><span class="badge ' + sc + '">' + str(r.get("Status","-")) + '</span></td>'
-        html += '<td>' + pd2 + ' ' + str(r.get("Priority","-")) + '</td>'
-        html += '<td class="ds">' + str(r.get("Remarks","-")) + '</td>'
-        html += '<td class="mt">' + str(r.get("Last Modified By","-")) + '</td>'
-        html += '<td class="mt">' + md + '</td>'
-        html += '</tr>'
+        html += '<td><span class="badge ' + sc + '">' + str(r.get("Status","-")) + "</span></td>"
+        html += "<td>" + pd2 + " " + str(r.get("Priority","-")) + "</td>"
+        html += '<td class="ds">' + str(r.get("Remarks","-")) + "</td>"
+        html += '<td class="mt">' + str(r.get("Last Modified By","-")) + "</td>"
+        html += '<td class="mt">' + md + "</td>"
+        html += "</tr>"
     html += "</tbody></table></div>"
     st.markdown(html, unsafe_allow_html=True)
 
@@ -276,7 +274,7 @@ def main():
 
     with tab1:
         fc1, fc2, fc3, fc4 = st.columns(4)
-        with fc1: search = st.text_input("🔍 Search", placeholder="Name, category, owner...", key="s1")
+        with fc1: search = st.text_input("🔍 Search", placeholder="Name, category...", key="s1")
         with fc2:
             copts = ["All"] + sorted(df["Category"].unique().tolist()) if total else ["All"]
             fcat = st.selectbox("Category", copts, key="fc1")
@@ -286,7 +284,6 @@ def main():
         with fc4:
             sopts = ["All"] + sorted(df["Status"].unique().tolist()) if total else ["All"]
             fstat = st.selectbox("Status", sopts, key="fs1")
-
         filt = df.copy()
         if search: filt = filt[filt.apply(lambda r: search.lower() in " ".join(r.astype(str).values).lower(), axis=1)]
         if fcat != "All": filt = filt[filt["Category"]==fcat]
@@ -298,12 +295,11 @@ def main():
     with tab2:
         dm1, dm2 = st.columns(2)
         with dm1:
-            st.markdown('<div class="sec-title">📤 Upload Excel</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sec-title">Upload Excel</div>', unsafe_allow_html=True)
             umode = st.radio("Mode", ["Append new rows", "Replace all (admin)"], key="um", horizontal=True)
             apw = ""
             if "Replace" in umode:
                 apw = st.text_input("Admin password", type="password", key="ap")
-
             upf = st.file_uploader("Upload", type=["xlsx","xls"], key="uf")
             if upf:
                 try:
@@ -325,32 +321,29 @@ def main():
                         else: st.info("All URLs already exist.")
                     else:
                         if apw == ADMIN_PASSWORD:
-                            st.warning("Replace " + str(len(get_links())) + " records with " + str(len(ndf)) + "?")
+                            st.warning("Replace " + str(len(get_links())) + " records?")
                             if st.button("Replace All", type="primary", key="rb"):
                                 save_links(ndf)
                                 st.success("Replaced")
                                 st.rerun()
                         else: st.error("Enter admin password.")
                 except Exception as e: st.error("Error: " + str(e))
-
             st.markdown("---")
             if total > 0:
                 buf = io.BytesIO()
                 df.to_excel(buf, sheet_name=SHEET_NAME, index=False)
                 st.download_button("📥 Export Excel", buf.getvalue(), file_name="AccessHub_" + datetime.now().strftime("%Y%m%d") + ".xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
             st.markdown("---")
             hurl = st.text_input("Hub URL (for emails)", placeholder="Your Streamlit URL", key="hu")
             if hurl and total > 0:
                 subj = urllib.parse.quote("Access Hub - Bookmark This")
                 body = urllib.parse.quote("Hi Team,\n\nAccess all resources:\n" + hurl + "\n\nBookmark this link.\n\nTotal: " + str(total) + "\n\nRegards,\n" + un)
-                st.markdown('<a href="mailto:?subject=' + subj + '&body=' + body + '" style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#2563EB,#3B82F6);color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">📧 Notify All Team</a>', unsafe_allow_html=True)
+                st.markdown('<a href="mailto:?subject=' + subj + '&body=' + body + '" style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#2563EB,#3B82F6);color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">📧 Notify All</a>', unsafe_allow_html=True)
 
         with dm2:
-            st.markdown('<div class="sec-title">➕ Add / Edit Entry</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sec-title">Add / Edit Entry</div>', unsafe_allow_html=True)
             editing = st.session_state.get("edit_idx") is not None
             edit_row = df.iloc[st.session_state.edit_idx].to_dict() if editing and st.session_state.edit_idx < len(df) else {}
-
             if total > 0:
                 eo = {"-- New Entry --": None}
                 eo.update({str(i+1) + ". " + r["Application Name"]: i for i, (_, r) in enumerate(df.iterrows())})
@@ -363,7 +356,6 @@ def main():
                     st.session_state.edit_idx = None
                     editing = False
                     edit_row = {}
-
             with st.form("entry_form", clear_on_submit=True):
                 r1, r2 = st.columns(2)
                 with r1:
@@ -380,11 +372,9 @@ def main():
                 fdept2 = st.text_input("Department", value=str(edit_row.get("Department","")), key="fdp2")
                 fpri2 = st.selectbox("Priority", ["Medium","High","Low"], key="fp2")
                 frem2 = st.text_area("Remarks", value=str(edit_row.get("Remarks","")), key="fr2", height=60)
-
                 sb1, sb2, sb3 = st.columns([1,1,2])
                 with sb1: save_btn = st.form_submit_button("💾 Save", type="primary")
                 with sb2: del_btn = st.form_submit_button("🗑️ Delete")
-
                 if save_btn:
                     if not fnm2.strip(): st.error("Name required.")
                     else:
@@ -413,20 +403,16 @@ def main():
                     st.rerun()
 
     with tab3:
-        st.markdown('<div class="sec-title">📋 Daily Status Tracker</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sec-title">Daily Status Tracker</div>', unsafe_allow_html=True)
         tc1, tc2 = st.columns([3,1])
         with tc2: tsearch = st.text_input("🔍 Search tasks", key="ts")
-
         tfilt = tdf.copy()
         if tsearch: tfilt = tfilt[tfilt.apply(lambda r: tsearch.lower() in " ".join(r.astype(str).values).lower(), axis=1)]
         render_tracker_table(tfilt)
-
         st.markdown("---")
-        st.markdown('<div class="sec-title">➕ Add / Edit Task</div>', unsafe_allow_html=True)
-
+        st.markdown('<div class="sec-title">Add / Edit Task</div>', unsafe_allow_html=True)
         t_editing = st.session_state.get("t_edit_idx") is not None
         t_edit_row = tdf.iloc[st.session_state.t_edit_idx].to_dict() if t_editing and st.session_state.t_edit_idx < len(tdf) else {}
-
         if tasks > 0:
             to2 = {"-- New Task --": None}
             to2.update({str(i+1) + ". " + r["Task Name"]: i for i, (_, r) in enumerate(tdf.iterrows())})
@@ -439,7 +425,6 @@ def main():
                 st.session_state.t_edit_idx = None
                 t_editing = False
                 t_edit_row = {}
-
         with st.form("task_form", clear_on_submit=True):
             tr1, tr2 = st.columns(2)
             with tr1:
@@ -457,11 +442,9 @@ def main():
                 tstatus = st.selectbox("Status", ["To Do","In Progress","Done","Blocked","Pending"], key="tst")
                 tpri = st.selectbox("Priority", ["Medium","High","Low"], key="tpr")
             trem = st.text_area("Remarks", value=str(t_edit_row.get("Remarks","")), key="trm", height=60)
-
             tb1, tb2, tb3 = st.columns([1,1,2])
             with tb1: tsave = st.form_submit_button("💾 Save Task", type="primary")
             with tb2: tdel = st.form_submit_button("🗑️ Delete Task")
-
             if tsave:
                 if not tname.strip(): st.error("Task Name required.")
                 else:
@@ -488,7 +471,6 @@ def main():
                 st.success("Deleted")
                 st.session_state.t_edit_idx = None
                 st.rerun()
-
         if tasks > 0:
             st.markdown("---")
             buf2 = io.BytesIO()
